@@ -10,6 +10,8 @@ import os
 from metrics import compute_metrics, tensor_text_to_video_metrics, tensor_video_to_text_sim
 import time
 import argparse
+import wandb
+
 from modules.tokenization_clip import SimpleTokenizer as ClipTokenizer
 from modules.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
 from modules.modeling import CLIP4Clip
@@ -19,6 +21,7 @@ from util import parallel_apply, get_logger
 from dataloaders.data_dataloaders import DATALOADER_DICT
 
 torch.distributed.init_process_group(backend="nccl")
+os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2,3"
 
 global logger
 
@@ -150,6 +153,28 @@ def set_seed_logger(args):
 
     return args
 
+def wandb_init(args):
+    # set the wandb project where this run will be logged
+    project_name = "Summer_2023"
+
+    # read hyperparameters and run metadata from args
+    '''
+    learning_rate = args.lr
+    architecture = args.init_model
+    dataset = args.dataset
+    epochs = args.epochs
+    '''
+    # read hyperparameters and run metadata from args
+    config = {}
+    for arg_name, arg_value in vars(args).items():
+        config[arg_name] = arg_value
+
+    # initialize wandb
+    wandb.init(
+        project=project_name,
+        config=config
+    )
+    
 def init_device(args, local_rank):
     global logger
 
@@ -298,6 +323,15 @@ def train_epoch(epoch, args, model, train_dataloader, device, n_gpu, optimizer, 
                             (time.time() - start_time) / (log_step * args.gradient_accumulation_steps))
                 start_time = time.time()
 
+                 # log training information using wandb
+                wandb.log({
+                    "epoch": epoch + 1,
+                    "step": step + 1,
+                    "lr": "-".join([str('%.9f' % itm) for itm in sorted(list(set(optimizer.get_lr())))]),
+                    "loss": float(loss),
+                    "time_per_step": (time.time() - start_time) / (log_step * args.gradient_accumulation_steps)
+                })
+                
     total_loss = total_loss / len(train_dataloader)
     return total_loss, global_step
 
@@ -463,6 +497,8 @@ def main():
     global logger
     args = get_args()
     args = set_seed_logger(args)
+    
+    wandb_init(args)
     device, n_gpu = init_device(args, args.local_rank)
 
     tokenizer = ClipTokenizer()
@@ -556,7 +592,7 @@ def main():
                                                scheduler, global_step, local_rank=args.local_rank)
             if args.local_rank == 0:
                 logger.info("Epoch %d/%s Finished, Train Loss: %f", epoch + 1, args.epochs, tr_loss)
-
+            '''
                 output_model_file = save_model(epoch, args, model, optimizer, tr_loss, type_name="")
 
                 ## Run on val dataset, this process is *TIME-consuming*.
@@ -574,6 +610,7 @@ def main():
         #     model = load_model(-1, args, n_gpu, device, model_file=best_output_model_file)
         #     eval_epoch(args, model, test_dataloader, device, n_gpu)
 
+        '''
     elif args.do_eval:
         if args.local_rank == 0:
             eval_epoch(args, model, test_dataloader, device, n_gpu)
