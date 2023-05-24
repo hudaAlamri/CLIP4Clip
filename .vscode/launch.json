@@ -4,8 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    
-        
+
         {
             "name": "Python: Current File",
             "type": "python",
@@ -16,7 +15,7 @@
             "module": "torch.distributed.launch",
             "args": [
                 "--nproc_per_node=4",
-                "main_task_retrieval_avsd.py",
+                "main_task_retrieval.py",
                 "--do_train",
                 "--num_thread_reader=16",
                 "--epochs=5",

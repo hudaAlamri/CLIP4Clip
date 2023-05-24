@@ -27,8 +27,8 @@ class AVSD_Dataset(Dataset):
             self,
             data_path,
             features_path,
-            data_set='/home/huda/avsd_spring2022/data/avsd/valid_i3d_data.json',
-            dataset_val='/home/huda/avsd_spring2022/data/avsd/val_options.json',
+            #data_set='/home/huda/avsd_spring2022/data/avsd/valid_i3d_data.json',
+            #dataset_val='/home/huda/avsd_spring2022/data/avsd/val_options.json',
             #avsd_path='/home/huda/avsd_spring2022/data/avsd/train_data.json',
             tokenizer=None,
             opt=None,
@@ -248,6 +248,7 @@ class AVSD_Dataset(Dataset):
 
         return pairs_text, pairs_mask, pairs_segment, video, video_mask
 
+'''
 if __name__ == "__main__":
 
     tokenizer = ClipTokenizer()
@@ -256,3 +257,4 @@ if __name__ == "__main__":
     next(iter(data_loader))
     for step, batch in enumerate(data_loader):
         print('step')
+'''
