@@ -6,8 +6,7 @@ from dataloaders.dataloader_msvd_retrieval import MSVD_DataLoader
 from dataloaders.dataloader_lsmdc_retrieval import LSMDC_DataLoader
 from dataloaders.dataloader_activitynet_retrieval import ActivityNet_DataLoader
 from dataloaders.dataloader_didemo_retrieval import DiDeMo_DataLoader
-
-from dataloaders.dataloader_avsd_retrieval import AVSD_Dataset
+from dataloaders.dataloader_charades_retrieval import Charades_Dataset
 
 def dataloader_msrvtt_train(args, tokenizer):
     msrvtt_dataset = MSRVTT_TrainDataLoader(
@@ -293,53 +292,6 @@ def dataloader_charades_test(args, tokenizer, subset="test"):
     )
     return dataloader_charades, len(charades_dataset)
 
-def dataloader_avsd_train(args, tokenizer):
-    avsd_dataset = AVSD_Dataset(
-        subset="train",
-        data_path=args.data_path,
-        features_path=args.features_path,
-        max_words=args.max_words,
-        feature_framerate=args.feature_framerate,
-        tokenizer=tokenizer,
-        max_frames=args.max_frames,
-        frame_order=args.train_frame_order,
-        slice_framepos=args.slice_framepos,
-    )
-
-    train_sampler = torch.utils.data.distributed.DistributedSampler(avsd_dataset)
-
-    dataloader = DataLoader(
-        avsd_dataset,
-        batch_size=args.batch_size // args.n_gpu,
-        num_workers=args.num_thread_reader,
-        pin_memory=False,
-        shuffle=(train_sampler is None),
-        sampler=train_sampler,
-        drop_last=True,
-    )
-
-    return dataloader, len(avsd_dataset), train_sampler
-
-def dataloader_avsd_test(args, tokenizer, subset="test"):
-    avsd_dataset = AVSD_Dataset(
-        subset=subset,
-        data_path=args.data_path,
-        features_path=args.features_path,
-        max_words=args.max_words,
-        feature_framerate=args.feature_framerate,
-        tokenizer=tokenizer,
-        max_frames=args.max_frames,
-        slice_framepos=args.slice_framepos,
-    )
-    dataloader_avsd = DataLoader(
-        avsd_dataset,
-        batch_size=args.batch_size_val,
-        num_workers=args.num_thread_reader,
-        shuffle=False,
-        drop_last=False,
-    )
-    return dataloader_avsd, len(avsd_dataset)
-
 DATALOADER_DICT = {}
 DATALOADER_DICT["msrvtt"] = {"train":dataloader_msrvtt_train, "val":dataloader_msrvtt_test, "test":None}
 DATALOADER_DICT["msvd"] = {"train":dataloader_msvd_train, "val":dataloader_msvd_test, "test":dataloader_msvd_test}
@@ -347,5 +299,4 @@ DATALOADER_DICT["lsmdc"] = {"train":dataloader_lsmdc_train, "val":dataloader_lsm
 DATALOADER_DICT["activity"] = {"train":dataloader_activity_train, "val":dataloader_activity_test, "test":None}
 DATALOADER_DICT["didemo"] = {"train":dataloader_didemo_train, "val":dataloader_didemo_test, "test":dataloader_didemo_test}
 DATALOADER_DICT["charades"] = {"train":dataloader_charades_train, "val":None, "test":dataloader_charades_test}
-DATALOADER_DICT["AVSD"] = {"train":dataloader_avsd_train, "val":None, "test":dataloader_avsd_test}
 
